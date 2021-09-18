@@ -33,6 +33,7 @@
 
 # Build folders
 */build/
+*/*/build/
 
 # .vscode
 */.vscode/
