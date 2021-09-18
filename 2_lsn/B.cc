@@ -10,12 +10,10 @@ char get_sym(size_t strnum, size_t pos) {
 }
 
 int main() {
-  size_t strnum = 0,
-         beg = 0,
-         end = 0;
+  size_t strnum = 0, beg = 0, end = 0;
 
   std::cin >> strnum >> beg >> end;
-  for (size_t i = beg; i <= end; ++i )
+  for (size_t i = beg; i <= end; ++i)
     std::cout << get_sym(strnum, i);
 
   std::cout << std::endl;
