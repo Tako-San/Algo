@@ -23,6 +23,7 @@ int main() {
   // iterating over all heap splitting
   // 1 - left heap, 0 right heap
   for (size_t gen = 0, end = 1u << N; gen < end; ++gen) {
+    // first heap mass
     ssize_t sum = 0;
     for (size_t i = 0, u = gen; u != 0; ++i, u >>= 1)
       sum += (u & 1) * W[i];
