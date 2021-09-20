@@ -28,10 +28,7 @@ int main() {
       --have5;
     }
 
-    while (val > 0) {
-      val -= 5;
-      ++debt5;
-    }
+    debt5 += val / 5;
   }
 
   std::cout << debt5 << std::endl;
