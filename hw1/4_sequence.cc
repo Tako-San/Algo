@@ -22,7 +22,7 @@ int main()
         std::cin >> idxs[i];
 
     for (auto idx : idxs)
-      std::cout << get_sym(strnum, idx);
+      std::cout << get_sym(strnum - 1, idx - 1);
 
     std::cout << std::endl;
     return 0;
