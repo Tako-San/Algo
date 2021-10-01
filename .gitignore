@@ -32,9 +32,8 @@
 *.app
 
 # Build folders
-*/build/
-*/*/build/
+build/
 
 # .vscode
-*/.vscode/
-./vscode/
+\.vscode/
+
