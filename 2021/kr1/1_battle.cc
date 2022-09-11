@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <vector>
 #include <list>
+#include <vector>
 
 void hit(std::vector<int> &hps, size_t p, size_t q)
 {

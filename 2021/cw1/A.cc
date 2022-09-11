@@ -7,13 +7,15 @@ using std::cin;
 using std::cout;
 using std::endl;
 
-int main() {
+int main()
+{
   size_t N = 0;
   cin >> N;
   array<ssize_t, 23> W{};
 
   ssize_t total = 0;
-  for (size_t i = 0; i < N; ++i) {
+  for (size_t i = 0; i < N; ++i)
+  {
     cin >> W[i];
     total += W[i];
   }
@@ -22,7 +24,8 @@ int main() {
 
   // iterating over all heap splitting
   // 1 - left heap, 0 right heap
-  for (size_t gen = 0, end = 1u << N; gen < end; ++gen) {
+  for (size_t gen = 0, end = 1u << N; gen < end; ++gen)
+  {
     // first heap mass
     ssize_t sum = 0;
     for (size_t i = 0, u = gen; u != 0; ++i, u >>= 1)

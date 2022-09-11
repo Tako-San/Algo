@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 
-void do_stuff(std::vector<uint32_t>&V, int num)
+void do_stuff(std::vector<uint32_t> &V, int num)
 {
   size_t left = 0;
   size_t right = 1;
@@ -14,11 +14,7 @@ void do_stuff(std::vector<uint32_t>&V, int num)
   {
     if (sum < num)
       sum += V[right++];
-
-    
-
   }
-
 }
 
 int main()

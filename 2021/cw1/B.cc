@@ -1,6 +1,7 @@
 #include <iostream>
 
-char get_sym(size_t strnum, size_t pos) {
+char get_sym(size_t strnum, size_t pos)
+{
   if (0 == pos)
     return 'a' + strnum;
 
@@ -9,7 +10,8 @@ char get_sym(size_t strnum, size_t pos) {
   return get_sym(strnum - 1, new_pos);
 }
 
-int main() {
+int main()
+{
   size_t strnum = 0, beg = 0, end = 0;
 
   std::cin >> strnum >> beg >> end;
