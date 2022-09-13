@@ -86,8 +86,8 @@ int main()
   readSet(set);
   readSet(set);
 
-  for (const auto &pair : set)
-    printChunk(pair.first, pair.second);
+  for (const auto [pos, chunk] : set)
+    printChunk(pos, chunk);
 
   return 0;
 }
