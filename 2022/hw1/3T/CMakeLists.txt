@@ -1,1 +1,1 @@
-hwal_add_task(3_subarraysSums)
+hwal_add_task(3_subarrays_sums)

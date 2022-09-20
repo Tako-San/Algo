@@ -1,0 +1,1 @@
+hwal_add_task(2_exact_array_sum)
