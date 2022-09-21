@@ -13,6 +13,7 @@ MITM
 
 #include <algorithm>
 #include <iostream>
+#include <limits>
 #include <vector>
 
 using T = uint64_t;
@@ -27,7 +28,7 @@ std::pair<T, std::vector<int>> readW(unsigned N)
     total += W[i];
   }
 
-  return {total, W};
+  return {total, std::move(W)};
 }
 
 T calcHeap(const std::vector<int> &W, T set)
@@ -40,18 +41,23 @@ T calcHeap(const std::vector<int> &W, T set)
   return heap;
 }
 
-std::vector<T> getSums(const std::vector<int> &W)
+std::vector<T> getSums(const std::vector<int> &W, T total)
 {
   auto N = W.size();
-  auto maxg = static_cast<T>(1) << N; // 2 ^ N
+  /* 2 ^ (N - 1), because we may calc only half */
+  auto maxg = static_cast<T>(1) << (N - 1);
 
-  std::vector<T> sumSet{};
-  sumSet.reserve(N);
+  std::vector<T> sums{};
+  sums.reserve(N);
   for (T g = 0; g < maxg; g++)
-    sumSet.push_back(calcHeap(W, g));
+  {
+    auto heap = calcHeap(W, g);
+    sums.push_back(heap);
+    sums.push_back(total - heap);
+  }
 
-  std::sort(sumSet.begin(), sumSet.end());
-  return sumSet;
+  std::sort(sums.begin(), sums.end());
+  return sums;
 }
 
 /* MITM - Meet In The Middle */
@@ -67,7 +73,7 @@ T mitm(const std::vector<T> &s1, const std::vector<T> &s2, T total)
 
   auto half1 = total / 2;
   auto half2 = total - half1;
-  auto minDiff = static_cast<T>(1) << 62;
+  auto minDiff = std::numeric_limits<T>::max();
   while (cur1 != end1 && cur2 != end2)
   {
     auto sum = *cur1 + *cur2;
@@ -101,8 +107,8 @@ int main()
   auto N2 = N - N1;
   auto [total2, W2] = readW(N2);
 
-  auto sumSet1 = getSums(W1);
-  auto sumSet2 = getSums(W2);
+  auto sums1 = getSums(W1, total1);
+  auto sums2 = getSums(W2, total2);
 
-  std::cout << mitm(sumSet1, sumSet2, total1 + total2) << std::endl;
+  std::cout << mitm(sums1, sums2, total1 + total2) << std::endl;
 }
