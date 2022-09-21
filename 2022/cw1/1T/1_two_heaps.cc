@@ -12,7 +12,7 @@ MITM
 */
 
 #include <iostream>
-#include <stdio.h>
+#include <set>
 #include <vector>
 
 using T = unsigned long long;
@@ -40,22 +40,66 @@ T calcHeap(const std::vector<int> &W, T set)
   return heap;
 }
 
+std::set<T> getSums(const std::vector<int> &W)
+{
+  auto N = W.size();
+  auto maxg = static_cast<T>(1) << N; // 2 ^ N
+
+  std::set<T> sumSet{};
+  for (T g = 0; g < maxg; g++)
+    sumSet.insert(calcHeap(W, g));
+
+  return sumSet;
+}
+
+T mitm(const std::set<T> &s1, const std::set<T> &s2, T total)
+{
+  /* from small to large */
+  auto cur1 = s1.begin();
+  auto end1 = s1.end();
+
+  /* from large to small */
+  auto cur2 = s2.rbegin();
+  auto end2 = s2.rend();
+
+  auto half1 = total / 2;
+  auto half2 = total - half1;
+  auto minDiff = static_cast<T>(1) << 62;
+  while (cur1 != end1 && cur2 != end2)
+  {
+    auto sum = *cur1 + *cur2;
+    if (sum < half1)
+    {
+      minDiff = std::min(minDiff, (total - sum) - sum);
+      ++cur1;
+    }
+    else if (sum > half2)
+    {
+      minDiff = std::min(minDiff, sum - (total - sum));
+      ++cur2;
+    }
+    else
+    {
+      return half2 - half1;
+    }
+  }
+
+  return minDiff;
+}
+
 int main()
 {
   unsigned N = 0;
   std::cin >> N;
-  auto [total, W] = readW(N);
 
-  auto maxg = static_cast<T>(1) << N; // 2 ^ N
-  auto min = static_cast<T>(1) << 62; // 2 ^ 62
-  for (T g = 0; g < maxg; g++)
-  {
-    auto heap2 = calcHeap(W, g);
-    auto heap1 = total - heap2;
+  auto N1 = N / 2;
+  auto [total1, W1] = readW(N1);
 
-    auto diff = (heap2 > heap1) ? heap2 - heap1 : heap1 - heap2;
-    min = std::min(diff, min);
-  }
+  auto N2 = N - N1;
+  auto [total2, W2] = readW(N2);
 
-  std::cout << min << std::endl;
+  auto sumSet1 = getSums(W1);
+  auto sumSet2 = getSums(W2);
+
+  std::cout << mitm(sumSet1, sumSet2, total1 + total2) << std::endl;
 }
