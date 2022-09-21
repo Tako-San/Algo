@@ -14,24 +14,26 @@ void printInterval(const std::vector<uint32_t> &v, uint32_t p)
   auto beg = v.begin();
   auto end = v.end();
 
+  uint32_t sum = 0;
   for (auto fst = beg, snd = beg; fst != end;)
-  {
-    auto val = std::accumulate(fst, snd, static_cast<uint32_t>(0));
-    if (val < p)
+    if (sum > p)
+    {
+      sum -= *fst;
+      ++fst;
+    }
+    else if (sum < p)
     {
       if (snd == end)
         break;
+      sum += *snd;
       ++snd;
     }
-    else if (val > p)
-      ++fst;
     else
     {
       std::cout << std::distance(beg, fst) + 1 << " "
                 << std::distance(beg, snd) + 1 << std::endl;
       return;
     }
-  }
 
   std::cout << "Not found" << std::endl;
 }
