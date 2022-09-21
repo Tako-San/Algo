@@ -13,7 +13,7 @@ endmacro()
 macro(hwal_add_task TASKNAME)
   add_executable(${TASKNAME} ${TASKNAME}.cc)
 
-  target_compile_options(${TASKNAME} PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(${TASKNAME} PRIVATE -Wall -Wextra -Wpedantic -O2)
   target_compile_features(${TASKNAME} PRIVATE cxx_std_20)
 
   set_target_properties(${TASKNAME}
