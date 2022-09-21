@@ -11,11 +11,11 @@ MITM
 
 */
 
+#include <algorithm>
 #include <iostream>
-#include <set>
 #include <vector>
 
-using T = unsigned long long;
+using T = uint64_t;
 
 std::pair<T, std::vector<int>> readW(unsigned N)
 {
@@ -40,19 +40,22 @@ T calcHeap(const std::vector<int> &W, T set)
   return heap;
 }
 
-std::set<T> getSums(const std::vector<int> &W)
+std::vector<T> getSums(const std::vector<int> &W)
 {
   auto N = W.size();
   auto maxg = static_cast<T>(1) << N; // 2 ^ N
 
-  std::set<T> sumSet{};
+  std::vector<T> sumSet{};
+  sumSet.reserve(N);
   for (T g = 0; g < maxg; g++)
-    sumSet.insert(calcHeap(W, g));
+    sumSet.push_back(calcHeap(W, g));
 
+  std::sort(sumSet.begin(), sumSet.end());
   return sumSet;
 }
 
-T mitm(const std::set<T> &s1, const std::set<T> &s2, T total)
+/* MITM - Meet In The Middle */
+T mitm(const std::vector<T> &s1, const std::vector<T> &s2, T total)
 {
   /* from small to large */
   auto cur1 = s1.begin();
