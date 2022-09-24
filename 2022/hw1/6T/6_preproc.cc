@@ -253,10 +253,10 @@ ResumableNoInc StateCode(StateMachine &stm)
 
   for (;;)
   {
-    std::cout << stm.genChar();
     bool finish = co_await stm.getAwaiter(transition);
     if (finish)
       break;
+    std::cout << stm.genChar();
   }
 }
 
