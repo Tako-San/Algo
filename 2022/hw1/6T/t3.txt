@@ -1,0 +1,8 @@
+int func()
+{
+  char c1 = '/*'; // this is bad...
+  char c2 = '//'; /* this is bad too... */
+  char c3 = '"'; /* it is */ //ok
+  /* "Test1" 'Test2' //Test3 */
+  return 0;
+}
