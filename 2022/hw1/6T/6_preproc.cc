@@ -1,23 +1,28 @@
 #include <coroutine>
 #include <iostream>
+#include <iterator>
 #include <string>
+#include <string_view>
 #include <unordered_map>
+
+namespace CoroBoilerplate
+{
 
 struct ResumableNoInc
 {
   struct promise_type
   {
-    using coro_handle = std::coroutine_handle<promise_type>;
-    auto get_return_object() { return coro_handle::from_promise(*this); }
+    using CoroHandle = std::coroutine_handle<promise_type>;
+    auto get_return_object() { return CoroHandle::from_promise(*this); }
     auto initial_suspend() noexcept { return std::suspend_always{}; }
     auto final_suspend() noexcept { return std::suspend_always{}; }
     void unhandled_exception() { std::terminate(); }
     void return_void() {}
   };
 
-  using coro_handle = std::coroutine_handle<promise_type>;
+  using CoroHandle = std::coroutine_handle<promise_type>;
 
-  ResumableNoInc(coro_handle handle) : handle_(handle) {}
+  ResumableNoInc(CoroHandle handle) : handle_(handle) {}
   ResumableNoInc(ResumableNoInc &&rhs) : handle_(rhs.handle_)
   {
     rhs.handle_ = nullptr;
@@ -36,7 +41,7 @@ struct ResumableNoInc
     return !handle_.done();
   }
 
-  coro_handle handle()
+  CoroHandle handle()
   {
     auto h = handle_;
     handle_ = nullptr;
@@ -44,7 +49,7 @@ struct ResumableNoInc
   }
 
 private:
-  coro_handle handle_;
+  CoroHandle handle_;
 };
 
 template <typename T>
@@ -53,8 +58,8 @@ struct Generator
   struct promise_type
   {
     T current_value;
-    using coro_handle = std::coroutine_handle<promise_type>;
-    auto get_return_object() { return coro_handle::from_promise(*this); }
+    using CoroHandle = std::coroutine_handle<promise_type>;
+    auto get_return_object() { return CoroHandle::from_promise(*this); }
     auto initial_suspend() noexcept { return std::suspend_always{}; }
     auto final_suspend() noexcept { return std::suspend_always{}; }
     void unhandled_exception() { std::terminate(); }
@@ -66,9 +71,9 @@ struct Generator
     }
   };
 
-  using coro_handle = std::coroutine_handle<promise_type>;
+  using CoroHandle = std::coroutine_handle<promise_type>;
 
-  Generator(coro_handle handle) : handle_(handle) {}
+  Generator(CoroHandle handle) : handle_(handle) {}
   Generator(Generator &&rhs) : handle_(rhs.handle_) { rhs.handle_ = nullptr; }
   Generator(const Generator &) = delete;
   ~Generator()
@@ -89,29 +94,38 @@ struct Generator
   T currentValue() const { return handle_.promise().current_value; }
 
 private:
-  coro_handle handle_;
+  CoroHandle handle_;
 };
+
+} // namespace CoroBoilerplate
+using namespace CoroBoilerplate;
+
+namespace STM
+{
 
 enum class State : char
 {
   Code,
   String,
+  Charachter,
   MultiLineComment,
   SignleLineComment
 };
 
 enum class Sym : char
 {
+  DoubleQuoteMark,
+  SingleQuoteMark,
   DoubleSlash,
   SlashStar,
   StarSlash,
-  QuoteMark,
   NewLine,
   Term,
   Sym
 };
 
 using CoroT = std::coroutine_handle<>;
+using Token = std::pair<Sym, char>;
 
 template <typename F, typename SM>
 struct StmAwaiter : public F
@@ -121,7 +135,7 @@ struct StmAwaiter : public F
   StmAwaiter(F f, SM &stm) : F(f), stm_(stm) {}
 
   bool await_ready() const noexcept { return false; }
-
+  bool await_resume() noexcept { return (stm_.genVal() == Sym::Term); }
   CoroT await_suspend(CoroT) noexcept
   {
     stm_.genNext();
@@ -129,19 +143,24 @@ struct StmAwaiter : public F
     auto newState = F::operator()(sym);
     return stm_[newState];
   }
-
-  bool await_resume() noexcept { return (stm_.genVal() == Sym::Term); }
 };
 
-template <typename State, typename Sym>
 class StateMachine
 {
   State current_;
   std::unordered_map<State, CoroT> states_;
-  Generator<Sym> gen_;
+  Generator<Token> gen_;
 
 public:
-  StateMachine(Generator<Sym> &&g) : gen_(std::move(g)) {}
+  StateMachine(Generator<Token> &&g) : gen_(std::move(g)) {}
+
+  CoroT operator[](State s) { return states_[s]; }
+  State current() const { return current_; }
+
+  Sym genVal() const { return gen_.currentValue().first; }
+  char genChar() const { return gen_.currentValue().second; }
+  Token genTok() const { return gen_.currentValue(); }
+  void genNext() { gen_.moveNext(); }
 
   void run(State initial)
   {
@@ -155,118 +174,127 @@ public:
     states_[x] = stf(*this).handle();
   }
 
-  CoroT operator[](State s) { return states_[s]; }
-
-  State current() const { return current_; }
-
   template <typename F>
   auto getAwaiter(F transition)
   {
     return StmAwaiter<F, decltype(*this)>{transition, *this};
   }
-
-  Sym genVal() const { return gen_.currentValue(); }
-
-  void genNext() { gen_.moveNext(); }
 };
 
-using StateMT = StateMachine<State, Sym>;
-
-Generator<Sym> inputSeq(std::string s)
+/* input sequence generator */
+Generator<Token> lexer(std::string_view s)
 {
   for (size_t i = 0, end = s.size(); i < end; ++i)
-    switch (s[i])
-    {
-    case '"':
-      co_yield Sym::QuoteMark;
-      break;
-
-    case '/': {
-      auto res = Sym::Sym;
-      if (i + 1 == end)
-        res = Sym::Sym;
-      switch (s[++i])
-      {
-      case '/':
-        res = Sym::DoubleSlash;
-        break;
-      case '*':
-        res = Sym::SlashStar;
-        break;
-      default:
-        --i;
-        res = Sym::Sym;
-        break;
-      }
-      co_yield res;
-    }
-    break;
-
-    case '*': {
-      auto res = Sym::Sym;
-      if (i + 1 == end)
-        res = Sym::Sym;
-      if (s[++i] == '/')
-        res = Sym::StarSlash;
+    if (s[i] == '"')
+      co_yield {Sym::DoubleQuoteMark, '"'};
+    else if (s[i] == '\'')
+      co_yield {Sym::SingleQuoteMark, '\''};
+    else if (s[i] == '\n')
+      co_yield {Sym::NewLine, '\n'};
+    else if (s[i] == '/')
+      if (++i == end)
+        co_yield {Sym::Sym, s[i]};
+      else if (s[i] == '/')
+        co_yield {Sym::DoubleSlash, '\0'};
+      else if (s[i] == '*')
+        co_yield {Sym::SlashStar, '\0'};
       else
-        --i, res = Sym::Sym;
-
-      co_yield res;
-    }
-    break;
-
-    case '\n':
-      co_yield Sym::NewLine;
-      break;
-
-    default:
-      co_yield Sym::Sym;
-      break;
-    }
+      {
+        --i;
+        co_yield {Sym::Sym, s[i]};
+      }
+    else if (s[i] == '*')
+      if (++i == end)
+        co_yield {Sym::Sym, '\0'};
+      else if (s[i] == '/')
+        co_yield {Sym::StarSlash, ' '};
+      else
+      {
+        --i;
+        co_yield {Sym::Sym, s[i]};
+      }
+    else
+      co_yield {Sym::Sym, s[i]};
 
   for (;;)
-    co_yield Sym::Term;
+    co_yield {Sym::Term, '\0'};
 }
 
-ResumableNoInc StateCode(StateMT &stm)
+std::string forPrint(Token tok)
+{
+  switch (tok.first)
+  {
+  case Sym::DoubleSlash:
+    return "//";
+  case Sym::SlashStar:
+    return "/*";
+  case Sym::StarSlash:
+    return "*/";
+  default:
+    return {tok.second};
+  }
+}
+
+/* All possible states */
+
+ResumableNoInc StateCode(StateMachine &stm)
 {
   auto transition = [](auto sym) {
     if (sym == Sym::SlashStar)
       return State::MultiLineComment;
     else if (sym == Sym::DoubleSlash)
       return State::SignleLineComment;
-    else if (sym == Sym::QuoteMark)
+    else if (sym == Sym::DoubleQuoteMark)
       return State::String;
+    else if (sym == Sym::SingleQuoteMark)
+      return State::Charachter;
     return State::Code;
   };
 
   for (;;)
   {
-    std::cout << "Code" << std::endl;
+    std::cout << stm.genChar();
     bool finish = co_await stm.getAwaiter(transition);
     if (finish)
       break;
   }
 }
 
-ResumableNoInc StateString(StateMT &stm)
+ResumableNoInc StateString(StateMachine &stm)
 {
   auto transition = [](auto sym) {
-    if (sym == Sym::QuoteMark)
+    if (sym == Sym::DoubleQuoteMark)
       return State::Code;
     return State::String;
   };
 
   for (;;)
   {
-    std::cout << "String" << std::endl;
+    std::cout << forPrint(stm.genTok());
     bool finish = co_await stm.getAwaiter(transition);
     if (finish)
       break;
   }
 }
 
-ResumableNoInc StateSingleLineComment(StateMT &stm)
+ResumableNoInc StateChar(StateMachine &stm)
+{
+  auto transition = [](auto sym) {
+    if (sym == Sym::SingleQuoteMark)
+      return State::Code;
+    return State::Charachter;
+  };
+
+  for (;;)
+  {
+    std::cout << forPrint(stm.genTok());
+    bool finish = co_await stm.getAwaiter(transition);
+    if (finish)
+      break;
+  }
+}
+
+ResumableNoInc StateSingleLineComment(StateMachine &stm)
 {
   auto transition = [](auto sym) {
     if (sym == Sym::NewLine)
@@ -275,16 +303,11 @@ ResumableNoInc StateSingleLineComment(StateMT &stm)
   };
 
   for (;;)
-  {
-    std::cout << "Single line comment" << std::endl;
-    bool finish = co_await stm.getAwaiter(transition);
-    if (finish)
+    if (auto finish = co_await stm.getAwaiter(transition); finish)
       break;
-  }
 }
 
-
-ResumableNoInc StateMultiLineComment(StateMT &stm)
+ResumableNoInc StateMultiLineComment(StateMachine &stm)
 {
   auto transition = [](auto sym) {
     if (sym == Sym::StarSlash)
@@ -293,25 +316,28 @@ ResumableNoInc StateMultiLineComment(StateMT &stm)
   };
 
   for (;;)
-  {
-    std::cout << "Multi line comment" << std::endl;
-    bool finish = co_await stm.getAwaiter(transition);
-    if (finish)
+    if (auto finish = co_await stm.getAwaiter(transition); finish)
       break;
-  }
 }
+
+} // namespace STM
+using namespace STM;
 
 int main()
 {
-  auto gen = inputSeq("c\"s\"/*hi*/");
-  StateMT stm{std::move(gen)};
-  stm.addState(State::String, StateString);
+  std::cin >> std::noskipws;
+
+  std::istream_iterator<char> it(std::cin);
+  std::istream_iterator<char> end;
+  std::string input(it, end);
+
+  StateMachine stm{lexer(input)};
   stm.addState(State::Code, StateCode);
+  stm.addState(State::String, StateString);
+  stm.addState(State::Charachter, StateChar);
   stm.addState(State::MultiLineComment, StateMultiLineComment);
   stm.addState(State::SignleLineComment, StateSingleLineComment);
-  stm.run(State::Code);
 
-  std::string st = (stm.current() == State::Code ? "Code" : "Not code");
-  std::cout << "State machine in state " << st << std::endl;
+  stm.run(State::Code);
   return 0;
 }
