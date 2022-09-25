@@ -23,11 +23,11 @@ struct ResumableNoInc
   using CoroHandle = std::coroutine_handle<promise_type>;
 
   ResumableNoInc(CoroHandle handle) : handle_(handle) {}
+  ResumableNoInc(const ResumableNoInc &) = delete;
   ResumableNoInc(ResumableNoInc &&rhs) : handle_(rhs.handle_)
   {
     rhs.handle_ = nullptr;
   }
-  ResumableNoInc(const ResumableNoInc &) = delete;
   ~ResumableNoInc()
   {
     if (handle_)
