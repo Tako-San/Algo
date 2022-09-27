@@ -9,10 +9,7 @@ f n p =
 
 #include <iostream>
 
-int pow2(int n)
-{
-  return 1 << n;
-}
+int pow2(int n) { return 1 << n; }
 
 int f(int n, int p)
 {
