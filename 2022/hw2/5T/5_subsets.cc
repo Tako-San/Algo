@@ -52,8 +52,9 @@ r
 #include <map>
 #include <string>
 
-void printSym(const std::map<char, int> &symbols)
+void printSym(const std::vector<std::pair<char, int>> &symbols)
 {
+  auto n = symbols.size();
   
 }
 
@@ -66,7 +67,11 @@ int main()
   for (char c : word)
     ++symbols[c];
 
-  printSym(symbols);
+  std::vector<std::pair<char, int>> v{};
+  for (auto s : symbols)
+    v.push_back(std::move(s));
+
+  printSym(v);
   return 0;
 }
 
