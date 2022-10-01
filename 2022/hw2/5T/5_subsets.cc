@@ -49,13 +49,22 @@ r
 
 #include <algorithm>
 #include <iostream>
-#include <map>
 #include <string>
+#include <unordered_map>
 
-void printSym(const std::vector<std::pair<char, int>> &symbols)
+template <typename It>
+void print(It from, It to, std::string prefix = "")
 {
-  auto n = symbols.size();
-  
+  if (from == to)
+  {
+    std::cout << prefix << std::endl;
+    return;
+  }
+
+  auto [letter, num] = *from;
+  for (size_t i = 0; i < num; ++i)
+    print(std::next(from), to, prefix + std::string(i + 1, letter));
+  print(std::next(from), to, prefix);
 }
 
 int main()
@@ -63,20 +72,11 @@ int main()
   std::string word{};
   std::cin >> word;
 
-  std::map<char, int> symbols{};
+  std::unordered_map<char, size_t> map{};
   for (char c : word)
-    ++symbols[c];
+    map[c] += 1;
 
-  std::vector<std::pair<char, int>> v{};
-  for (auto s : symbols)
-    v.push_back(std::move(s));
+  print(map.begin(), map.end());
 
-  printSym(v);
   return 0;
 }
-
-/*
-
-Возможно есть смысл хранить букву и количество раз, которое она встречается.
-
-*/
