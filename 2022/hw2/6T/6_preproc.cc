@@ -1,3 +1,5 @@
+/* Program for comments deletion */
+
 #include <coroutine>
 #include <iostream>
 #include <iterator>
