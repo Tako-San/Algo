@@ -1,0 +1,1 @@
+hwal_add_task(10_mobile_network)
