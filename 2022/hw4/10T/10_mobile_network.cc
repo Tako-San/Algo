@@ -79,13 +79,25 @@ op3 0
 
 #include <iostream>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
-struct Operator
+struct Tower
 {
-  std::string name;
-  unsigned r;
+  int r;
   int x;
   int y;
+
+  bool cover(int x_, int y_)
+  {
+    return (x - x_) * (x - x_) + (y - y_) * (y - y_) < r * r;
+  }
+};
+
+struct Elem
+{
+  size_t idx = 0;
+  std::vector<Tower> towers;
 };
 
 int main()
@@ -93,5 +105,59 @@ int main()
   size_t N = 0;
   std::cin >> N;
 
+  std::unordered_map<std::string, Elem> nameToIndex{};
+  for (size_t i = 0; i < N; ++i)
+  {
+    std::string name{};
+    int r = 0;
+    int x = 0;
+    int y = 0;
+
+    std::cin >> name >> x >> y >> r;
+
+    if (nameToIndex.find(name) == nameToIndex.end())
+    {
+      auto size = nameToIndex.size();
+      nameToIndex[name].idx = size;
+    }
+
+    nameToIndex[name].towers.emplace_back(r, x, y);
+  }
+
+  int x = 0;
+  int y = 0;
+  std::cin >> x >> y;
+
+  std::vector<std::pair<std::string, size_t>> res(nameToIndex.size());
+
+  for (auto &elem : nameToIndex)
+  {
+    auto idx = elem.second.idx;
+    res[idx].first = elem.first;
+
+    auto &counter = res[idx].second;
+    for (auto &tower : elem.second.towers)
+      if (tower.cover(x, y))
+        ++counter;
+  }
+
+  std::cout << nameToIndex.size() << std::endl;
+  for (const auto &pair : res)
+    std::cout << pair.first << " " << pair.second << std::endl;
+
   return 0;
 }
+
+/*
+
+Мысли по решению.
+
+Сортировать по координатам и радиусу мы ничего не будем. Это не нужно.
+
+Завести мапу:
+ключ - название оператора
+значение - порядковый номер, список с параметрами вышек
+
+
+
+*/

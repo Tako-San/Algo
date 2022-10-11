@@ -1,0 +1,10 @@
+8
+Merizon -7 -5 2
+K-Mobile -3 -5 4
+BTT -2 -4 2
+WarpLine -1 -4 5
+Telephone -4 -6 2
+BTT -1 -6 4
+Near2 -6 -2 4
+Merizon 7 7 6
+3 5
